@@ -1,0 +1,102 @@
+<p><label>起始字符：<input id="input_startCode" value="0x0000" /></label></p>
+<p><label>结束字符：<input id="input_endCode" value="0x3ffff" /></label></p>
+<p><label>帧数：</label><input id="input_fps" value="30" type="number" /></label></p>
+<button onclick="continuePlay()">⏯️播放/暂停</button>
+<button onclick="startPlay()">🔁重来</button>
+<div id="charCode"></div>
+<div id="char"></div>
+
+<script>
+    let charPlayer, startCode, endCode, fps, code;
+
+    function startPlay() {
+        if (charPlayer) {
+            clearInterval(charPlayer);
+            charPlayer = undefined;
+        }
+
+        startCode = parseInt(document.getElementById("input_startCode").value);
+        endCode = parseInt(document.getElementById("input_endCode").value);
+        fps = parseInt(document.getElementById("input_fps").value);
+        fps = fps > 0 ? fps : 1;
+
+        playChar(startCode, endCode, fps);
+    }
+
+    function playChar(startCode, endCode, fps) {
+        code = startCode;
+        charPlayer = setInterval(() => {
+            showChar(code);
+            code += 1;
+            if (code > endCode) clearInterval(charPlayer);
+        }, 1000 / fps);
+
+        function showChar(codePoint) {
+            document.getElementById("charCode").innerHTML = `U+${codePoint.toString(16).toUpperCase().padStart(4, "0")}`;
+            document.getElementById("char").innerHTML = `${String.fromCodePoint(codePoint)}`;
+        }
+    }
+
+    function continuePlay() {
+        if (charPlayer) {
+            startCode = code;
+            clearInterval(charPlayer);
+            charPlayer = undefined;
+            return;
+        }
+        if (!(startCode && endCode && fps)) {
+            startPlay();
+            return;
+        }
+        playChar(startCode, endCode, fps);
+    }
+</script>
+
+<style>
+    @font-face {
+        font-family: "天珩全字库TH-Tshyn-P0";
+        src: url(fonts/TH-Tshyn-P0.ttf);
+    }
+
+    @font-face {
+        font-family: "天珩全字库TH-Tshyn-P1";
+        src: url(fonts/TH-Tshyn-P1.ttf);
+    }
+
+    @font-face {
+        font-family: "天珩全字库TH-Tshyn-P2";
+        src: url(fonts/TH-Tshyn-P2.ttf);
+    }
+
+    @font-face {
+        font-family: "天珩全字库TH-Tshyn-P16";
+        src: url(fonts/TH-Tshyn-P16.ttf);
+    }
+</style>
+
+<style>
+    input {
+        font-family: Consolas, monospace;
+        font-size: 1rem;
+        line-height: 2rem;
+    }
+
+    button {
+        font-size: 1rem;
+        line-height: 2rem;
+    }
+
+    #char {
+        font-size: 10rem;
+        text-align: center;
+        line-height: 20rem;
+        font-family: "思源宋体", "Noto Serif CJK SC", "天珩全字库TH-Tshyn-P0", "天珩全字库TH-Tshyn-P1", "天珩全字库TH-Tshyn-P2", "天珩全字库TH-Tshyn-P16", "思源黑体", "Noto Sans CJK SC", system-ui, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+
+    #charCode {
+        font-family: Consolas, monospace;
+        font-size: 5rem;
+        line-height: 10rem;
+        text-align: center;
+    }
+</style>
