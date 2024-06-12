@@ -1,54 +1,76 @@
 <p><label>起始字符：<input id="input_startCode" value="0x0000" /></label></p>
 <p><label>结束字符：<input id="input_endCode" value="0x3ffff" /></label></p>
-<p><label>帧数：</label><input id="input_fps" value="30" type="number" /></label></p>
-<button onclick="continuePlay()">⏯️播放/暂停</button>
-<button onclick="startPlay()">🔁重来</button>
+<p><label>帧数：</label><input id="input_fps" value="10" type="number" /></label></p>
+<button onclick="pauseContinueFlash()">⏯️播放/暂停</button>
+<button onclick="initializeFlash()">🔁重置</button>
 <div id="charCode"></div>
 <div id="char"></div>
 
 <script>
-    let charPlayer, startCode, endCode, fps, code;
+    class CharPlayer {
+        constructor(config) {
+            if (CharPlayer.instance) CharPlayer.instance.stop();
 
-    function startPlay() {
-        if (charPlayer) {
-            clearInterval(charPlayer);
-            charPlayer = undefined;
+            this.startCode = config.startCode;
+            this.endCode = config.endCode;
+            this.fps = config.fps;
+            this.showChar = config.showChar;
+
+            this.initialize();
+
+            CharPlayer.instance = this;
         }
 
-        startCode = parseInt(document.getElementById("input_startCode").value);
-        endCode = parseInt(document.getElementById("input_endCode").value);
-        fps = parseInt(document.getElementById("input_fps").value);
-        fps = fps > 0 ? fps : 1;
+        initialize() {
+            this.currentCode = this.startCode;
+            this.showChar(this.currentCode);
+        }
 
-        playChar(startCode, endCode, fps);
+        play() {
+            this.interval = setInterval(() => {
+                this.showChar(this.currentCode);
+                if (this.currentCode >= this.endCode) this.stop();
+                this.currentCode += 1;
+            }, 1000 / this.fps);
+        }
+
+        pause() {
+            clearInterval(this.interval);
+            this.interval = undefined;
+        }
+
+        stop() {
+            clearInterval(this.interval);
+            CharPlayer.instance = undefined;
+        }
     }
 
-    function playChar(startCode, endCode, fps) {
-        code = startCode;
-        charPlayer = setInterval(() => {
-            showChar(code);
-            code += 1;
-            if (code > endCode) clearInterval(charPlayer);
-        }, 1000 / fps);
+    let charPlayer;
+    initializeFlash();
 
-        function showChar(codePoint) {
-            document.getElementById("charCode").innerHTML = `U+${codePoint.toString(16).toUpperCase().padStart(4, "0")}`;
-            document.getElementById("char").innerHTML = `${String.fromCodePoint(codePoint)}`;
-        }
+    function initializeFlash() {
+        let startCode = parseInt(document.getElementById("input_startCode").value);
+        let endCode = parseInt(document.getElementById("input_endCode").value);
+        let fps = parseInt(document.getElementById("input_fps").value);
+        if (fps <= 0) fps = 1;
+
+        charPlayer = new CharPlayer({
+            startCode: startCode,
+            endCode: endCode,
+            fps: fps,
+            showChar: showChar
+        });
     }
 
-    function continuePlay() {
-        if (charPlayer) {
-            startCode = code;
-            clearInterval(charPlayer);
-            charPlayer = undefined;
-            return;
-        }
-        if (!(startCode && endCode && fps)) {
-            startPlay();
-            return;
-        }
-        playChar(startCode, endCode, fps);
+    function showChar(codePoint) {
+        document.getElementById("charCode").innerHTML = `U+${codePoint.toString(16).toUpperCase().padStart(4, "0")}`;
+        document.getElementById("char").innerHTML = `${String.fromCodePoint(codePoint)}`;
+    }
+
+    function pauseContinueFlash() {
+        if (!charPlayer) initializeFlash();
+        if (!charPlayer.interval) charPlayer.play();
+        else charPlayer.pause();
     }
 </script>
 
@@ -72,6 +94,10 @@
         font-family: "天珩全字库TH-Tshyn-P16";
         src: url(fonts/TH-Tshyn-P16.ttf);
     }
+
+    #char {
+        font-family: "思源宋体", "Noto Serif CJK SC", "天珩全字库TH-Tshyn-P0", "天珩全字库TH-Tshyn-P1", "天珩全字库TH-Tshyn-P2", "天珩全字库TH-Tshyn-P16", "思源黑体", "Noto Sans CJK SC", system-ui, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
 </style>
 
 <style>
@@ -90,7 +116,6 @@
         font-size: 10rem;
         text-align: center;
         line-height: 20rem;
-        font-family: "思源宋体", "Noto Serif CJK SC", "天珩全字库TH-Tshyn-P0", "天珩全字库TH-Tshyn-P1", "天珩全字库TH-Tshyn-P2", "天珩全字库TH-Tshyn-P16", "思源黑体", "Noto Sans CJK SC", system-ui, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
     }
 
     #charCode {
