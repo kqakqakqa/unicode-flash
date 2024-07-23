@@ -1,127 +1,41 @@
-<p><label>起始字符：<input id="input_startCode" value="0x0000" /></label></p>
-<p><label>结束字符：<input id="input_endCode" value="0x3ffff" /></label></p>
-<p><label>帧数：</label><input id="input_fps" value="10" type="number" /></label></p>
-<button onclick="pauseContinueFlash()">⏯️播放/暂停</button>
-<button onclick="initializeFlash()">🔁重置</button>
-<div id="charCode"></div>
-<div id="char"></div>
+<html>
 
-<script>
-    class CharPlayer {
-        constructor(config) {
-            if (CharPlayer.instance) CharPlayer.instance.stop();
+<head>
+    <link rel="stylesheet" type="text/css" href="index.css" />
+    <link rel="stylesheet" type="text/css" href="fonts/fonts.css" />
+    <script src="js/index.js"></script>
+    <script src="js/class/CharPlayer.js"></script>
+    <script src="js/class/DisplayComponentsConfig.js"></script>
 
-            this.startCode = config.startCode;
-            this.endCode = config.endCode;
-            this.fps = config.fps;
-            this.showChar = config.showChar;
+    <meta charset="UTF-8" name="viewport" content="width=device-width" />
+    <title></title>
+</head>
 
-            this.initialize();
+<body>
+    <div>
+        <p><label>起始字符：<span class="beforeInput">0x</span><input id="input_startCode" value="0000"
+                    oninput="configChanged()" /></label></p>
+        <p><label>结束字符：<span class="beforeInput">0x</span><input id="input_endCode" value="3ffff"
+                    oninput="configChanged()" /></label></p>
+        <p><label>帧数：</label><input id="input_fps" value="10" type="number" oninput="configChanged()" /></label></p>
+        <p>
+            <button id="button_pauseContinueFlash" onclick="pauseContinueFlash()">⏯️播放/暂停</button>
+            <button id="button_initializeFlash" class="display-none" onclick="initializeFlash()">🔁应用/重置</button>
+            <button id="button_editDisplayPanel" onclick="startEndEditDisplayPanel()">✏️编辑</button>
+        </p>
+    </div>
 
-            CharPlayer.instance = this;
-        }
+    <div id="displayEditPanelContainer">
+        <div id="displayPanelMaxSize">
+            <div id="displayPanel" onclick="displayComponentOnClick(event)">
+                <div id="charCode" class="displayComponent" onclick="displayComponentOnClick(event)"> </div>
+                <div id="char" class="displayComponent" onclick="displayComponentOnClick(event)"> </div>
+            </div>
+        </div>
+        <div id="editPanel" class="display-none">请选择展示框中的部件</div>
+    </div>
 
-        initialize() {
-            this.currentCode = this.startCode;
-            this.showChar(this.currentCode);
-        }
 
-        play() {
-            this.interval = setInterval(() => {
-                this.showChar(this.currentCode);
-                if (this.currentCode >= this.endCode) this.stop();
-                this.currentCode += 1;
-            }, 1000 / this.fps);
-        }
+</body>
 
-        pause() {
-            clearInterval(this.interval);
-            this.interval = undefined;
-        }
-
-        stop() {
-            clearInterval(this.interval);
-            CharPlayer.instance = undefined;
-        }
-    }
-
-    let charPlayer;
-    initializeFlash();
-
-    function initializeFlash() {
-        let startCode = parseInt(document.getElementById("input_startCode").value);
-        let endCode = parseInt(document.getElementById("input_endCode").value);
-        let fps = parseInt(document.getElementById("input_fps").value);
-        if (fps <= 0) fps = 1;
-
-        charPlayer = new CharPlayer({
-            startCode: startCode,
-            endCode: endCode,
-            fps: fps,
-            showChar: showChar
-        });
-    }
-
-    function showChar(codePoint) {
-        document.getElementById("charCode").innerHTML = `U+${codePoint.toString(16).toUpperCase().padStart(4, "0")}`;
-        document.getElementById("char").innerHTML = `${String.fromCodePoint(codePoint)}`;
-    }
-
-    function pauseContinueFlash() {
-        if (!charPlayer) initializeFlash();
-        if (!charPlayer.interval) charPlayer.play();
-        else charPlayer.pause();
-    }
-</script>
-
-<style>
-    @font-face {
-        font-family: "天珩全字库TH-Tshyn-P0";
-        src: url(fonts/TH-Tshyn-P0.ttf);
-    }
-
-    @font-face {
-        font-family: "天珩全字库TH-Tshyn-P1";
-        src: url(fonts/TH-Tshyn-P1.ttf);
-    }
-
-    @font-face {
-        font-family: "天珩全字库TH-Tshyn-P2";
-        src: url(fonts/TH-Tshyn-P2.ttf);
-    }
-
-    @font-face {
-        font-family: "天珩全字库TH-Tshyn-P16";
-        src: url(fonts/TH-Tshyn-P16.ttf);
-    }
-
-    #char {
-        font-family: "思源宋体", "Noto Serif CJK SC", "天珩全字库TH-Tshyn-P0", "天珩全字库TH-Tshyn-P1", "天珩全字库TH-Tshyn-P2", "天珩全字库TH-Tshyn-P16", "思源黑体", "Noto Sans CJK SC", system-ui, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-    }
-</style>
-
-<style>
-    input {
-        font-family: Consolas, monospace;
-        font-size: 1rem;
-        line-height: 2rem;
-    }
-
-    button {
-        font-size: 1rem;
-        line-height: 2rem;
-    }
-
-    #char {
-        font-size: 10rem;
-        text-align: center;
-        line-height: 20rem;
-    }
-
-    #charCode {
-        font-family: Consolas, monospace;
-        font-size: 5rem;
-        line-height: 10rem;
-        text-align: center;
-    }
-</style>
+</html>
