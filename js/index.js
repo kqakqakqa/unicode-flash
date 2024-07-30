@@ -1,58 +1,160 @@
+// preset/file ←(主动导出|主动导入)→ config
+// edit ←(|触发updateConfig)→ config
+// config (主动/自动applyConfig)→ scene/player
+
+//`<div class="sceneComponent" style='transform: translateX(calc(0.5 * var(--sceneWidth) - 50%)) translateY(calc(0.5 * var(--sceneHeight) - 50%));'><span class="rawText">[bgBlock]</span><span class="text"></span></div>`
+
+
+
+//{"left":"0","middle":"50%","right":"100%"}
+
+//{"top":"0","middle":"50%","bottom":"100%"}
+
+
+
+//--sceneComponent_xAlign
+
+//--sceneComponent_yAlign
+
+
+
+//--sceneComponent_x
+
+//--sceneComponent_y
+
+
+
+
+
 let charPlayer;
-let displayComponentsConfig;
-let defaultComponentsConfig = {
-    charCode: {
-        x: 50,
-        y: 50,
-        xAlign: "center",
-        yAlign: "center",
-        fontSize: 10,
-        fontColor: "#000000",
-        fontFamily: "",
-        visible: true,
-        custom: ""
-    },
-    char: {
-        x: 50,
-        y: 50,
-        xAlign: "center",
-        yAlign: "center",
-        fontSize: 10,
-        fontColor: "#000000",
-        fontFamily: "",
-        visible: true,
-        custom: ""
+let config = {};
+
+// config
+
+const presetConfig = {
+    sceneConfig: [
+        {
+            text: "[bgBlock]"
+        },
+        {
+            text: "[charCode]",
+            y: 20,
+            font: ["Consolas", "monospace"]
+        },
+        {
+            text: "[char]",
+            font: ["\"思源宋体\"", "\"Noto Serif CJK SC\"", "\"天珩全字库TH-Tshyn-P0\"", "\"天珩全字库TH-Tshyn-P1\"", "\"天珩全字库TH-Tshyn-P2\"", "\"天珩全字库TH-Tshyn-P16\"", "system-ui", "sans-serif"],
+            fontSize: 30
+        },
+    ],
+    playerConfig: {
+        startCode: 0x4f8b,
+        endCode: 0x3ffff,
+        fps: 30,
     },
 };
 
+const defaultSceneComponentConfig = {
+    text: "",
+    x: 50,
+    y: 50,
+    xAlign: "middle",
+    yAlign: "middle",
+    font: "",
+    fontSize: "",
+    fontColor: "",
+    visible: true,
+    custom: ""
+};
+
+const defaultPlayerConfig = {
+    startCode: 0x4f8b,
+    endCode: 0x3ffff,
+    fps: 30,
+};
+
+function newSceneConfig(config) {
+    if (!config || !(config instanceof Array)) return;
+    let newConfig = [];
+    config.forEach(component => {
+        if (!component || !(component instanceof Object)) return;
+        let newComponent = Object.create(defaultSceneComponentConfig);
+        Object.assign(newComponent, component);
+        newConfig.push(newComponent);
+    });
+    return newConfig;
+}
+
+function newPlayerConfig(config) {
+    if (!config || !(config instanceof Object)) return;
+    let newConfig = Object.create(defaultPlayerConfig);
+    Object.assign(newConfig, config);
+    return newConfig;
+}
+
 window.onload = () => {
+    sceneAutoResize();
+    initializeFlash();
+};
 
-    displayComponentsConfig = new DisplayComponentsConfig()
-    displayComponentsConfig.setConfigs(defaultComponentsConfig);
+// scene
 
+function sceneAutoResize() {
     new ResizeObserver(es => {
         es.forEach(e => {
-            document.documentElement.style.setProperty("--displayEditPanelContainerSizeFactor", `calc(min((${e.contentRect.width}px) / 29.7, (${e.contentRect.height}px) / 21))`)
-        })
-    }).observe(document.getElementById("displayPanelMaxSize"));
-
-    initializeFlash();
+            document.documentElement.style.setProperty("--sceneMaxWidth", e.contentRect.width + "px");
+            document.documentElement.style.setProperty("--sceneMaxHeight", e.contentRect.height + "px");
+        });
+    }).observe(document.querySelector("#sceneMaxSize"));
 }
 
 function initializeFlash() {
-    let startCode = charCodeStringParser(document.getElementById("input_startCode").value);
-    let endCode = charCodeStringParser(document.getElementById("input_endCode").value);
-    let fps = parseInt(document.getElementById("input_fps").value);
+    config.sceneConfig = newSceneConfig(presetConfig.sceneConfig);
+    config.playerConfig = newPlayerConfig(presetConfig.playerConfig)
+    updateAndApplySceneConfig();
+    updatePlayerConfig();
+    applyPlayerConfig();
+}
+
+// resetButton
+
+function sceneUpToDate() {
+    document.body.classList.add("sceneUpToDate");
+}
+
+function sceneNotUpToDate() {
+    document.body.classList.remove("sceneUpToDate");
+}
+
+// useredit → sceneconfig → scene
+function updateAndApplySceneConfig() {
+    // updateSceneConfig();
+    applySceneConfig();
+}
+
+function updteSceneConfig() {
+
+};
+
+function applySceneConfig() {
+    config.sceneConfig.forEach(componentConfig => {
+
+    });
+};
+
+// useredit → playerconfig
+
+function updatePlayerConfig() {
+    let startCode = charCodeStringParser(document.querySelector("#input_startCode").value);
+    let endCode = charCodeStringParser(document.querySelector("#input_endCode").value);
+    let fps = parseInt(document.querySelector("#input_fps").value);
     if (fps <= 0) fps = 1;
 
-    charPlayer = new CharPlayer({
-        startCode: startCode,
-        endCode: endCode,
-        fps: fps,
-        showChar: showChar
-    });
+    config.playerConfig.startCode = startCode;
+    config.playerConfig.endCode = endCode;
+    config.playerConfig.fps = fps;
 
-    flashConfigApplied();
+    sceneNotUpToDate();
 }
 
 function charCodeStringParser(charCodeString) {
@@ -61,70 +163,49 @@ function charCodeStringParser(charCodeString) {
     return charCode;
 }
 
-function showChar(codePoint) {
-    document.getElementById("charCode").innerHTML = `U+${codePoint.toString(16).toUpperCase().padStart(4, "0")}`;
-    document.getElementById("char").innerHTML = (codePoint <= 0x10ffff) ? `${String.fromCodePoint(codePoint)}` : "";
+// playerconfig → player
+
+function applyPlayerConfig() {
+    charPlayer = new CharPlayer({
+        startCode: config.playerConfig.startCode,
+        endCode: config.playerConfig.endCode,
+        fps: config.playerConfig.fps,
+        showChar: showChar
+    });
+    charPlayer.initialize();
+    sceneUpToDate();
 }
+
+// scene
+
+const altCodes = {
+    "[charCode]": codePoint => `U+${codePoint.toString(16).toUpperCase().padStart(4, "0")}`,
+    "[char]": codePoint => (codePoint <= 0x10ffff) ? `${String.fromCodePoint(codePoint)}` : "",
+    "[bgBlock]": codePoint => `<div style="height: var(--sceneHeight); width: var(--sceneWidth); background-color: ${getBgBlockColor(codePoint)}; user-select: none;"></div>`
+};
+
+const bgBlockColors = ["#dde", "#ded", "#def", "#dfe", "#edd", "#edf", "#eef", "#efe", "#fdd", "#fdf", "#fee", "#ffd", "#ddf", "#dee", "#dfd", "#dff", "#ede", "#eed", "#efd", "#eff", "#fde", "#fed", "#fef", "#ffe"];
+
+function getBgBlockColor(codePoint) {
+    let r = parseInt(codePoint / 8) % 24;
+    return bgBlockColors[r];
+}
+
+function showChar(codePoint) {
+    document.querySelectorAll(".sceneComponent").forEach(e => {
+        let rawText = e.querySelector(".rawText").innerHTML;
+        for (let altCode in altCodes) {
+            rawText = rawText.replaceAll(altCode, altCodes[altCode](codePoint))
+        }
+        e.querySelector(".text").innerHTML = rawText;
+    });
+}
+
+// player
 
 function pauseContinueFlash() {
     if (!charPlayer) initializeFlash();
     if (!charPlayer.interval) charPlayer.play();
     else charPlayer.pause();
-    flashConfigChanged();
-}
-
-function flashConfigChanged() {
-    document.getElementById("button_initializeFlash").classList.remove("display-none");
-}
-
-function flashConfigApplied() {
-    charPlayer.initialize();
-    document.getElementById("button_initializeFlash").classList.add("display-none");
-}
-
-async function startEndEditDisplayPanel() {
-    if (document.body.classList.contains("displayPanelEditing")) {
-        document.getElementById("editPanel").addEventListener('transitionend', e => {
-            e.target.classList.add("display-none");
-        }, { once: true });
-        document.body.classList.remove("displayPanelEditing");
-    }
-    else {
-        document.getElementById("editPanel").classList.remove("display-none");
-        await new Promise(requestAnimationFrame);
-        document.body.classList.add("displayPanelEditing");
-    }
-}
-
-function displayComponentOnClick(e) {
-    if (document.body.classList.contains("displayPanelEditing")) {
-        for (let old of document.querySelectorAll(".displayComponent.editing")) {
-            old.classList.remove("editing")
-        };
-        e.target.classList.add("editing");
-        editingDisplayComponent(e.target.id);
-    }
-    e.stopPropagation();
-}
-
-function editingDisplayComponent(id) {
-    let displayComponentEditing = null;
-    let componentEditingConfig;
-    if (id == "displayPanel") {
-        displayComponentEditing = null;
-    }
-    else {
-        displayComponentEditing = id;
-        componentEditingConfig = displayComponentsConfig.getConfig(displayComponentEditing);
-    }
-    showDisplayComponentConfig(displayComponentEditing, componentEditingConfig);
-}
-
-function showDisplayComponentConfig(id, config) {
-    if (!id) {
-        document.getElementById("editPanel").innerHTML = "请选择展示框中的部件";
-    }
-    else {
-        document.getElementById("editPanel").innerHTML = id + "<br />" + JSON.stringify(config);
-    }
+    sceneNotUpToDate();
 }

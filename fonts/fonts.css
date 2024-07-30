@@ -17,7 +17,3 @@
     font-family: "天珩全字库TH-Tshyn-P16";
     src: url(fonts/TH-Tshyn-P16.ttf);
 }
-
-#char {
-    font-family: "思源宋体", "Noto Serif CJK SC", "天珩全字库TH-Tshyn-P0", "天珩全字库TH-Tshyn-P1", "天珩全字库TH-Tshyn-P2", "天珩全字库TH-Tshyn-P16", "思源黑体", "Noto Sans CJK SC", system-ui, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-}

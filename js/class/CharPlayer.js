@@ -19,7 +19,7 @@ class CharPlayer {
         this.interval = setInterval(() => {
             this.showChar(this.currentCode);
             if (this.currentCode >= this.endCode) this.stop();
-            this.currentCode += 1;
+            else this.currentCode += 1;
         }, 1000 / this.fps);
     }
 
