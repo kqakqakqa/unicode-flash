@@ -4,7 +4,9 @@
 
 ### 如何使用
 
-使用浏览器打开 [index.html](https://kqakqakqa.github.io/unicode-flash) 。
+1. [下载](https://github.com/kqakqakqa/unicode-flash/archive/refs/heads/main.zip)并解压此项目；
+
+2. 使用浏览器打开 [index.html](https://kqakqakqa.github.io/unicode-flash) 。
 
 ## 如何自定义字体
 
