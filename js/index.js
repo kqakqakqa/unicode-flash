@@ -2,30 +2,6 @@
 // edit ←(|触发updateConfig)→ config
 // config (主动/自动applyConfig)→ scene/player
 
-//`<div class="sceneComponent" style='transform: translateX(calc(0.5 * var(--sceneWidth) - 50%)) translateY(calc(0.5 * var(--sceneHeight) - 50%));'><span class="rawText">[bgBlock]</span><span class="text"></span></div>`
-
-
-
-//{"left":"0","middle":"50%","right":"100%"}
-
-//{"top":"0","middle":"50%","bottom":"100%"}
-
-
-
-//--sceneComponent_xAlign
-
-//--sceneComponent_yAlign
-
-
-
-//--sceneComponent_x
-
-//--sceneComponent_y
-
-
-
-
-
 let charPlayer;
 let config = {};
 
@@ -39,11 +15,11 @@ const presetConfig = {
         {
             text: "[charCode]",
             y: 20,
-            font: ["Consolas", "monospace"]
+            fonts: ["Consolas", "monospace"]
         },
         {
             text: "[char]",
-            font: ["\"思源宋体\"", "\"Noto Serif CJK SC\"", "\"天珩全字库TH-Tshyn-P0\"", "\"天珩全字库TH-Tshyn-P1\"", "\"天珩全字库TH-Tshyn-P2\"", "\"天珩全字库TH-Tshyn-P16\"", "system-ui", "sans-serif"],
+            fonts: ["\"思源宋体\"", "\"Noto Serif CJK SC\"", "\"天珩全字库TH-Tshyn-P0\"", "\"天珩全字库TH-Tshyn-P1\"", "\"天珩全字库TH-Tshyn-P2\"", "\"天珩全字库TH-Tshyn-P16\"", "sans-serif"],
             fontSize: 30
         },
     ],
@@ -60,7 +36,7 @@ const defaultSceneComponentConfig = {
     y: 50,
     xAlign: "middle",
     yAlign: "middle",
-    font: "",
+    fonts: [],
     fontSize: "",
     fontColor: "",
     visible: true,
@@ -128,25 +104,58 @@ function sceneNotUpToDate() {
 
 // useredit → sceneconfig → scene
 function updateAndApplySceneConfig() {
-    // updateSceneConfig();
+    updateSceneConfig();
     applySceneConfig();
 }
 
-function updteSceneConfig() {
+function updateSceneConfig() {
 
 };
+
+const defaultSceneComponentHtml = '<div class="sceneComponent"><span class="rawText"></span><span class="text"></span></div>';
+const sceneComponentXAlignMap = { "left": "0", "middle": "50%", "right": "100%" };
+const sceneComponentYAlignMap = { "top": "0", "middle": "50%", "bottom": "100%" };
 
 function applySceneConfig() {
+    document.querySelector("#scene").innerHTML = "";
     config.sceneConfig.forEach(componentConfig => {
+        let component = new DOMParser().parseFromString(defaultSceneComponentHtml, "text/html").body.firstChild;
 
+        component.querySelector(".rawText").innerHTML = (componentConfig.text || defaultSceneComponentConfig.text);
+        component.style.setProperty("--sceneComponent_x", (componentConfig.x ?? defaultSceneComponentConfig.x) / 100);
+        component.style.setProperty("--sceneComponent_y", (componentConfig.y ?? defaultSceneComponentConfig.y) / 100);
+        component.style.setProperty("--sceneComponent_xAlign", sceneComponentXAlignMap[componentConfig.xAlign || defaultSceneComponentConfig.xAlign]);
+        component.style.setProperty("--sceneComponent_yAlign", sceneComponentYAlignMap[componentConfig.yAlign || defaultSceneComponentConfig.yAlign]);
+        component.style.setProperty("font-family", fontFamilyArrayToFontFamilyString(componentConfig.fonts || defaultSceneComponentConfig.fonts));
+        component.style.setProperty("font-size", (componentConfig.fontSize || defaultSceneComponentConfig.fontSize) + "em");
+        component.style.setProperty("color", (componentConfig.fontColor || defaultSceneComponentConfig.fontColor));
+        if (!(componentConfig.visible || defaultSceneComponentConfig.visible)) component.style.setProperty("display", "none");
+
+        document.querySelector("#scene").appendChild(component);
     });
 };
+
+const fontFamilyGenericName = ["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "ui-serif", "ui-sans-serif", "ui-monospace", "ui-rounded", "math", "emoji", "fangsong"];
+
+function fontFamilyArrayToFontFamilyString(fonts) {
+    let fontsString = "";
+    for (let rawFont of fonts) {
+        let font = rawFont;
+        if (!fontFamilyGenericName.includes(rawFont)) {
+            font = font.replaceAll(/^["'](.*)["']$/g, "$1"); // 去除头尾引号
+            font = font.replaceAll(/["']/g, "\\$1"); // 转义中间引号
+        }
+        if (fontsString) fontsString += ", ";
+        fontsString += font;
+    }
+    return fontsString;
+}
 
 // useredit → playerconfig
 
 function updatePlayerConfig() {
-    let startCode = charCodeStringParser(document.querySelector("#input_startCode").value);
-    let endCode = charCodeStringParser(document.querySelector("#input_endCode").value);
+    let startCode = charCodeStringToCharCode(document.querySelector("#input_startCode").value);
+    let endCode = charCodeStringToCharCode(document.querySelector("#input_endCode").value);
     let fps = parseInt(document.querySelector("#input_fps").value);
     if (fps <= 0) fps = 1;
 
@@ -157,7 +166,7 @@ function updatePlayerConfig() {
     sceneNotUpToDate();
 }
 
-function charCodeStringParser(charCodeString) {
+function charCodeStringToCharCode(charCodeString) {
     let charCode = 0;
     if (new RegExp("^[0-9a-fA-F]{1,}$").test(charCodeString)) charCode = parseInt(`0x${charCodeString}`);
     return charCode;
