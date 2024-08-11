@@ -1,7 +1,8 @@
 <html>
 
 <head>
-    <link rel="stylesheet" type="text/css" href="index.css" />
+    <link rel="stylesheet" type="text/css" href="css/index.css" />
+    <link rel="stylesheet" type="text/css" href="css/flex.css" />
     <link rel="stylesheet" type="text/css" href="fonts/fonts.css" />
     <script src="js/index.js"></script>
     <script src="js/class/CharPlayer.js"></script>
@@ -12,33 +13,123 @@
 </head>
 
 <body>
-    <p><label>起始字符：<span class="beforeInput">0x</span><input id="input_startCode" value="4f8b"
-                oninput="updatePlayerConfig()" /></label></p>
-    <p><label>结束字符：<span class="beforeInput">0x</span><input id="input_endCode" value="3ffff"
-                oninput="updatePlayerConfig()" /></label></p>
-    <p><label>帧数：</label><input id="input_fps" value="30" type="number" oninput="updatePlayerConfig()" /></label></p>
+    <h2>场景设置</h2>
 
-    <div id="sceneEditPanel">请选择展示框中的部件</div>
+    <div id="sceneEdit">
+        <div id="sequenceEdit">
 
-    <p>
+            <div id="changeSequencePanel">
+                <button>➕添加</button>
+                <button>🔼上移</button>
+                <button>🔽下移</button>
+                <button>🗑️删除</button>
+            </div>
+
+            <div id="sequence">
+                <div class="componentInSequence" onclick="" tabindex="0">asdasd</div>
+                <div class="componentInSequence" onclick="" tabindex="0">asasdd</div>
+            </div>
+        </div>
+
+        <div class="inputs">
+
+            <div>内容</div>
+            <textarea id="" class="textInput monospaceInput" oninput=""></textarea>
+
+            <div>横向坐标</div>
+            <input id="" class="textInput monospaceInput" value="50" type="number" oninput="" />
+
+            <div>纵向坐标</div>
+            <input id="" class="textInput monospaceInput" value="50" type="number" oninput="" />
+
+            <div>对齐方式</div>
+            <div id="alignEdit">
+                <label class="alignEditCell"><input type="radio" name="alignEdit" /></label>
+                <div class="alignEditHorizontal"></div>
+                <label class="alignEditCell"><input type="radio" name="alignEdit" /></label>
+                <div class="alignEditHorizontal"></div>
+                <label class="alignEditCell"><input type="radio" name="alignEdit" /></label>
+
+                <div class="alignEditVertical"></div>
+                <div class="alignEditNone"></div>
+                <div class="alignEditNone"></div>
+                <div class="alignEditNone"></div>
+                <div class="alignEditVertical"></div>
+
+                <label class="alignEditCell"><input type="radio" name="alignEdit" /></label>
+                <div class="alignEditNone"></div>
+                <label class="alignEditCell"><input type="radio" name="alignEdit" /></label>
+                <div class="alignEditNone"></div>
+                <label class="alignEditCell"><input type="radio" name="alignEdit" /></label>
+
+                <div class="alignEditVertical"></div>
+                <div class="alignEditNone"></div>
+                <div class="alignEditNone"></div>
+                <div class="alignEditNone"></div>
+                <div class="alignEditVertical"></div>
+
+                <label class="alignEditCell"><input type="radio" name="alignEdit" /></label>
+                <div class="alignEditHorizontal"></div>
+                <label class="alignEditCell"><input type="radio" name="alignEdit" /></label>
+                <div class="alignEditHorizontal"></div>
+                <label class="alignEditCell"><input type="radio" name="alignEdit" /></label>
+            </div>
+
+            <div>字体</div>
+            <textarea id="" class="textInput" placeholder="一行表示一种字体&#10;例：Noto Serif CJK SC" wrap="off"
+                oninput=""></textarea>
+
+            <div>文字大小</div>
+            <input id="" class="textInput monospaceInput" value="10" type="number" min="0" oninput="" />
+
+            <div>文字颜色</div>
+            <input id="" class="" type="color" oninput="" />
+
+            <div>是否可见</div>
+            <div><input id="" class="switchInput" type="checkbox" oninput="" /></div>
+
+            <div>自定义</div>
+            <textarea id="input_custom" class="textInput monospaceInput" placeholder="自定义css样式&#10;例：font-weight: bold;"
+                wrap="off" oninput=""></textarea>
+        </div>
+    </div>
+
+    <h2>播放设置</h2>
+
+    <div id="playerEdit" class="inputs">
+        <div>起始字符</div>
+        <div class="inputCharCodeContainer">
+            <span class="charCode0x">0x</span>
+            <input id="input_startCode" class="textInput monospaceInput" value="4f8b" oninput="updatePlayerConfig()" />
+        </div>
+        <div>结束字符</div>
+        <div class="inputCharCodeContainer">
+            <span class="charCode0x">0x</span>
+            <input id="input_endCode" class="textInput monospaceInput" value="3ffff" oninput="updatePlayerConfig()" />
+        </div>
+        <div>每秒帧数</div>
+        <input id="input_fps" class="textInput monospaceInput" value="30" type="number" min="1"
+            oninput="updatePlayerConfig()" />
+    </div>
+
+    <div id="playPausePanel">
         <button id="button_pauseContinueFlash" onclick="pauseContinueFlash()">⏯️播放/暂停</button>
         <button id="button_resetFlash" onclick="applyPlayerConfig()">🔁应用/重置</button>
-        <!-- <button id="button_editDisplayPanel" onclick="startEndEditDisplayPanel()">✏️编辑</button> -->
-    </p>
+    </div>
 
     <div id="sceneMaxSize">
         <div id="scene">
-            <!-- <div class="sceneComponent"
+            <!-- <div class="component"
                 style='transform: translateX(calc(0.5 * var(--sceneWidth) - 50%)) translateY(calc(0.5 * var(--sceneHeight) - 50%));'>
                 <span class="rawText">[bgBlock]</span>
                 <span class="text"></span>
             </div>
-            <div class="sceneComponent"
+            <div class="component"
                 style='transform: translateX(calc(0.5 * var(--sceneWidth) - 50%)) translateY(calc(0.2 * var(--sceneHeight) - 50%)); font-family: Consolas, monospace;'>
                 <span class="rawText">[charCode]</span>
                 <span class="text"></span>
             </div>
-            <div class="sceneComponent"
+            <div class="component"
                 style='transform: translateX(calc(0.5 * var(--sceneWidth) - 50%)) translateY(calc(0.5 * var(--sceneHeight) - 50%)); font-family: "思源宋体", "Noto Serif CJK SC", "天珩全字库TH-Tshyn-P0", "天珩全字库TH-Tshyn-P1", "天珩全字库TH-Tshyn-P2", "天珩全字库TH-Tshyn-P16", system-ui, sans-serif; font-size: 30em;'>
                 <span class="rawText">[char]</span>
                 <span class="text"></span>

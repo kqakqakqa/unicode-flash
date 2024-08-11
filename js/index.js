@@ -2,8 +2,17 @@
 // edit ←(|触发updateConfig)→ config
 // config (主动/自动applyConfig)→ scene/player
 
+// window.addEventListener("beforeunload", e => {
+//     e.preventDefault();
+// });
+
 let charPlayer;
 let config = {};
+
+window.onload = () => {
+    sceneAutoResize();
+    initializeFlash();
+};
 
 // config
 
@@ -20,7 +29,7 @@ const presetConfig = {
         {
             text: "[char]",
             fonts: ["\"思源宋体\"", "\"Noto Serif CJK SC\"", "\"天珩全字库TH-Tshyn-P0\"", "\"天珩全字库TH-Tshyn-P1\"", "\"天珩全字库TH-Tshyn-P2\"", "\"天珩全字库TH-Tshyn-P16\"", "sans-serif"],
-            fontSize: 30
+            textSize: 30
         },
     ],
     playerConfig: {
@@ -30,15 +39,15 @@ const presetConfig = {
     },
 };
 
-const defaultSceneComponentConfig = {
+const defaultComponentConfig = {
     text: "",
     x: 50,
     y: 50,
     xAlign: "middle",
     yAlign: "middle",
     fonts: [],
-    fontSize: "",
-    fontColor: "",
+    textSize: "",
+    textColor: "",
     visible: true,
     custom: ""
 };
@@ -54,7 +63,7 @@ function newSceneConfig(config) {
     let newConfig = [];
     config.forEach(component => {
         if (!component || !(component instanceof Object)) return;
-        let newComponent = Object.create(defaultSceneComponentConfig);
+        let newComponent = Object.create(defaultComponentConfig);
         Object.assign(newComponent, component);
         newConfig.push(newComponent);
     });
@@ -67,11 +76,6 @@ function newPlayerConfig(config) {
     Object.assign(newConfig, config);
     return newConfig;
 }
-
-window.onload = () => {
-    sceneAutoResize();
-    initializeFlash();
-};
 
 // scene
 
@@ -95,11 +99,13 @@ function initializeFlash() {
 // resetButton
 
 function sceneUpToDate() {
-    document.body.classList.add("sceneUpToDate");
+    // document.body.classList.add("sceneUpToDate");
+    document.querySelector("#button_resetFlash").disabled = true;
 }
 
 function sceneNotUpToDate() {
-    document.body.classList.remove("sceneUpToDate");
+    // document.body.classList.remove("sceneUpToDate");
+    document.querySelector("#button_resetFlash").disabled = false;
 }
 
 // useredit → sceneconfig → scene
@@ -112,24 +118,24 @@ function updateSceneConfig() {
 
 };
 
-const defaultSceneComponentHtml = '<div class="sceneComponent"><span class="rawText"></span><span class="text"></span></div>';
-const sceneComponentXAlignMap = { "left": "0", "middle": "50%", "right": "100%" };
-const sceneComponentYAlignMap = { "top": "0", "middle": "50%", "bottom": "100%" };
+const defaultComponentHtml = '<div class="component"><span class="rawText"></span><span class="text"></span></div>';
+const componentXAlignMap = { "left": "0", "middle": "50%", "right": "100%" };
+const componentYAlignMap = { "top": "0", "middle": "50%", "bottom": "100%" };
 
 function applySceneConfig() {
     document.querySelector("#scene").innerHTML = "";
     config.sceneConfig.forEach(componentConfig => {
-        let component = new DOMParser().parseFromString(defaultSceneComponentHtml, "text/html").body.firstChild;
+        let component = new DOMParser().parseFromString(defaultComponentHtml, "text/html").body.firstChild;
 
-        component.querySelector(".rawText").innerHTML = (componentConfig.text || defaultSceneComponentConfig.text);
-        component.style.setProperty("--sceneComponent_x", (componentConfig.x ?? defaultSceneComponentConfig.x) / 100);
-        component.style.setProperty("--sceneComponent_y", (componentConfig.y ?? defaultSceneComponentConfig.y) / 100);
-        component.style.setProperty("--sceneComponent_xAlign", sceneComponentXAlignMap[componentConfig.xAlign || defaultSceneComponentConfig.xAlign]);
-        component.style.setProperty("--sceneComponent_yAlign", sceneComponentYAlignMap[componentConfig.yAlign || defaultSceneComponentConfig.yAlign]);
-        component.style.setProperty("font-family", fontFamilyArrayToFontFamilyString(componentConfig.fonts || defaultSceneComponentConfig.fonts));
-        component.style.setProperty("font-size", (componentConfig.fontSize || defaultSceneComponentConfig.fontSize) + "em");
-        component.style.setProperty("color", (componentConfig.fontColor || defaultSceneComponentConfig.fontColor));
-        if (!(componentConfig.visible || defaultSceneComponentConfig.visible)) component.style.setProperty("display", "none");
+        component.querySelector(".rawText").innerHTML = (componentConfig.text || defaultComponentConfig.text);
+        component.style.setProperty("--component_x", (componentConfig.x ?? defaultComponentConfig.x) / 100);
+        component.style.setProperty("--component_y", (componentConfig.y ?? defaultComponentConfig.y) / 100);
+        component.style.setProperty("--component_xAlign", componentXAlignMap[componentConfig.xAlign || defaultComponentConfig.xAlign]);
+        component.style.setProperty("--component_yAlign", componentYAlignMap[componentConfig.yAlign || defaultComponentConfig.yAlign]);
+        component.style.setProperty("font-family", fontFamilyArrayToFontFamilyString(componentConfig.fonts || defaultComponentConfig.fonts));
+        component.style.setProperty("font-size", (componentConfig.textSize || defaultComponentConfig.textSize) + "em");
+        component.style.setProperty("color", (componentConfig.textColor || defaultComponentConfig.textColor));
+        if (!(componentConfig.visible || defaultComponentConfig.visible)) component.style.setProperty("display", "none");
 
         document.querySelector("#scene").appendChild(component);
     });
@@ -139,7 +145,7 @@ const fontFamilyGenericName = ["serif", "sans-serif", "monospace", "cursive", "f
 
 function fontFamilyArrayToFontFamilyString(fonts) {
     let fontsString = "";
-    for (let rawFont of fonts) {
+    fonts.forEach(rawFont => {
         let font = rawFont;
         if (!fontFamilyGenericName.includes(rawFont)) {
             font = font.replaceAll(/^["'](.*)["']$/g, "$1"); // 去除头尾引号
@@ -147,7 +153,7 @@ function fontFamilyArrayToFontFamilyString(fonts) {
         }
         if (fontsString) fontsString += ", ";
         fontsString += font;
-    }
+    });
     return fontsString;
 }
 
@@ -157,7 +163,7 @@ function updatePlayerConfig() {
     let startCode = charCodeStringToCharCode(document.querySelector("#input_startCode").value);
     let endCode = charCodeStringToCharCode(document.querySelector("#input_endCode").value);
     let fps = parseInt(document.querySelector("#input_fps").value);
-    if (fps <= 0) fps = 1;
+    if (!fps > 0) fps = 1;
 
     config.playerConfig.startCode = startCode;
     config.playerConfig.endCode = endCode;
@@ -201,7 +207,7 @@ function getBgBlockColor(codePoint) {
 }
 
 function showChar(codePoint) {
-    document.querySelectorAll(".sceneComponent").forEach(e => {
+    document.querySelectorAll(".component").forEach(e => {
         let rawText = e.querySelector(".rawText").innerHTML;
         for (let altCode in altCodes) {
             rawText = rawText.replaceAll(altCode, altCodes[altCode](codePoint))

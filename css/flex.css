@@ -1,0 +1,47 @@
+body {
+    display: flex;
+    flex-direction: column;
+    row-gap: 1rem;
+}
+
+#sceneEdit {
+    display: flex;
+    column-gap: 2rem;
+    row-gap: 1rem;
+    flex-wrap: wrap;
+}
+
+#sequenceEdit {
+    display: flex;
+    flex-direction: column;
+    row-gap: 1rem;
+}
+
+#changeSequencePanel {
+    display: flex;
+    column-gap: 0.5rem;
+}
+
+#changeSequencePanel>button {
+    flex-grow: 1;
+}
+
+#sequence {
+    display: flex;
+    flex-direction: column;
+}
+
+#sequence>.componentInSequence {
+    flex-grow: 1;
+}
+
+.inputCharCodeContainer {
+    display: flex;
+    align-items: baseline;
+    column-gap: 0.25rem;
+}
+
+#playPausePanel {
+    display: flex;
+    column-gap: 0.5rem;
+}
