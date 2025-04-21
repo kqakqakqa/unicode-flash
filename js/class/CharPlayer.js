@@ -30,6 +30,5 @@ class CharPlayer {
 
     stop() {
         clearInterval(this.interval);
-        CharPlayer.instance = undefined;
     }
 }
