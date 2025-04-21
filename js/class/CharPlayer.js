@@ -1,34 +1,39 @@
-class CharPlayer {
-    constructor(config) {
-        if (CharPlayer.instance) CharPlayer.instance.stop();
+let charPlayer = {
+  new(config) {
+    this.stop?.();
 
-        this.startCode = config.startCode;
-        this.endCode = config.endCode;
-        this.fps = config.fps;
-        this.showChar = config.showChar;
+    this = {
+      startCode: config.startCode,
+      endCode: config.endCode,
+      fps: config.fps,
+      showChar: config.showChar,
+      interval: undefined,
 
-        CharPlayer.instance = this;
-    }
+      new: this.new,
 
-    initialize() {
+      initialize() {
         this.currentCode = this.startCode;
         this.showChar(this.currentCode);
-    }
+      },
 
-    play() {
+      play() {
         this.interval = setInterval(() => {
-            this.showChar(this.currentCode);
-            if (this.currentCode >= this.endCode) this.stop();
-            else this.currentCode += 1;
+          this.showChar(this.currentCode);
+          if (this.currentCode >= this.endCode) this.stop();
+          else this.currentCode += 1;
         }, 1000 / this.fps);
-    }
+      },
 
-    pause() {
+      pause() {
         clearInterval(this.interval);
         this.interval = undefined;
-    }
+      },
 
-    stop() {
+      stop() {
         clearInterval(this.interval);
-    }
-}
+        this.interval = undefined;
+      },
+
+    };
+  },
+};

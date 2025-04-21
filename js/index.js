@@ -6,12 +6,53 @@
 //     e.preventDefault();
 // });
 
-let charPlayer;
 let config = {};
 
 window.onload = () => {
     sceneAutoResize();
     initializeFlash();
+};
+
+// charPlayer
+
+let charPlayer = {
+    new(config) {
+        this.stop?.();
+
+        charPlayer = {
+            startCode: config.startCode,
+            endCode: config.endCode,
+            fps: config.fps,
+            showChar: config.showChar,
+            interval: undefined,
+
+            new: this.new,
+
+            initialize() {
+                this.currentCode = this.startCode;
+                this.showChar(this.currentCode);
+            },
+
+            play() {
+                this.interval = setInterval(() => {
+                    this.showChar(this.currentCode);
+                    if (this.currentCode >= this.endCode) this.stop();
+                    else this.currentCode += 1;
+                }, 1000 / this.fps);
+            },
+
+            pause() {
+                clearInterval(this.interval);
+                this.interval = undefined;
+            },
+
+            stop() {
+                clearInterval(this.interval);
+                this.interval = undefined;
+            },
+
+        };
+    },
 };
 
 // config
@@ -181,7 +222,7 @@ function charCodeStringToCharCode(charCodeString) {
 // playerconfig → player
 
 function applyPlayerConfig() {
-    charPlayer = new CharPlayer({
+    charPlayer.new({
         startCode: config.playerConfig.startCode,
         endCode: config.playerConfig.endCode,
         fps: config.playerConfig.fps,
