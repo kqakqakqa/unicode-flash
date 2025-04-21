@@ -57,59 +57,11 @@ let charPlayer = {
 
 // config
 
-const presetConfig = {
-  sceneConfig: [
-    {
-      text: "[bgBlock]"
-    },
-    {
-      text: "[charCode]",
-      y: 20,
-      fonts: ["Consolas", "monospace"]
-    },
-    {
-      text: "[char]",
-      fonts: ["\"思源宋体\"", "\"Noto Serif CJK SC\"", "\"天珩全字库TH-Tshyn-P0\"", "\"天珩全字库TH-Tshyn-P1\"", "\"天珩全字库TH-Tshyn-P2\"", "\"天珩全字库TH-Tshyn-P16\"", "sans-serif"],
-      textSize: 30
-    },
-  ],
-  playerConfig: {
-    startCode: 0x4f8b,
-    endCode: 0x3ffff,
-    fps: 30,
-  },
-};
-
-const defaultComponentConfig = {
-  text: "",
-  x: 50,
-  y: 50,
-  xAlign: "middle",
-  yAlign: "middle",
-  fonts: [],
-  textSize: "",
-  textColor: "",
-  visible: true,
-  custom: ""
-};
-
 const defaultPlayerConfig = {
   startCode: 0x4f8b,
   endCode: 0x3ffff,
   fps: 30,
 };
-
-function newSceneConfig(config) {
-  if (!config || !(config instanceof Array)) return;
-  let newConfig = [];
-  config.forEach(component => {
-    if (!component || !(component instanceof Object)) return;
-    let newComponent = Object.create(defaultComponentConfig);
-    Object.assign(newComponent, component);
-    newConfig.push(newComponent);
-  });
-  return newConfig;
-}
 
 function newPlayerConfig(config) {
   if (!config || !(config instanceof Object)) return;
@@ -120,18 +72,8 @@ function newPlayerConfig(config) {
 
 // scene
 
-function sceneAutoResize() {
-  new ResizeObserver(es => {
-    es.forEach(e => {
-      document.documentElement.style.setProperty("--sceneMaxWidth", e.contentRect.width + "px");
-      document.documentElement.style.setProperty("--sceneMaxHeight", e.contentRect.height + "px");
-    });
-  }).observe(document.querySelector("#sceneMaxSize"));
-}
-
 function initializeFlash() {
-  config.sceneConfig = newSceneConfig(presetConfig.sceneConfig);
-  config.playerConfig = newPlayerConfig(presetConfig.playerConfig)
+  config.playerConfig = newPlayerConfig(defaultPlayerConfig)
   updateAndApplySceneConfig();
   updatePlayerConfig();
   applyPlayerConfig();
