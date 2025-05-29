@@ -7,61 +7,65 @@
 </head>
 
 <body>
+  <h2>画面设置</h2>
+
+  <div class="inputsGrid" style="grid-template-columns: max-content 1fr">
+    <span>宽度</span>
+    <div class="monospace-input-container">
+      <input id="input_width" value="1920" type="number" min="1" oninput="updateFlashConfig()" />
+    </div>
+    <span>高度</span>
+    <div class="monospace-input-container">
+      <input id="input_height" value="1080" type="number" min="1" oninput="updateFlashConfig()" />
+    </div>
+    <span style="align-self: flex-start;">自定义画面布局</span>
+    <div id="monaco-editor-html" class="monaco-editor-wrapper" data-monaco-editor-option='{"language": "html"}'
+      data-custom-template="html">
+    </div>
+    <span style="align-self: flex-start;">自定义函数</span>
+    <div class="monaco-editor-wrapper" data-monaco-editor-option='{"language": "javascript"}' data-custom-template="js">
+    </div>
+    <span>内置的自定义函数</span>
+    <div id="system-js-lookup">
+      <pre>codePoint</pre>
+      <span>获取字符的码位（格式为“U+0000”）</span>
+      <pre>char</pre>
+      <span>获取字符本身（如果码位大于U+10FFFF则为空字符串）</span>
+    </div>
+  </div>
+
+  <div id="monaco-editor-mask"></div>
+
+  <button id="button_applySceneConfig" onclick="applyAndUpdateScene()" style="align-self: flex-start;">🎨应用</button>
+
   <h2>播放设置</h2>
 
-  <div id="playerEdit" class="inputs">
-    <div>起始字符</div>
-    <div class="inputCharCodeContainer">
-      <span class="charCode0x">0x</span>
-      <input id="input_startCode" class="monospaceInput" value="4f8b" oninput="updatePlayerConfig()" />
+  <div id="flashEdit" class="inputsGrid" style="grid-template-columns: max-content max-content">
+    <span>起始字符</span>
+    <div class="monospace-input-container">
+      <span>0x</span>
+      <input id="input_startCodePoint" value="4f8b" />
     </div>
-    <div>结束字符</div>
-    <div class="inputCharCodeContainer">
-      <span class="charCode0x">0x</span>
-      <input id="input_endCode" class="monospaceInput" value="3ffff" oninput="updatePlayerConfig()" />
+    <span>结束字符</span>
+    <div class="monospace-input-container">
+      <span>0x</span>
+      <input id="input_endCodePoint" value="3ffff" />
     </div>
-    <div>每秒帧数</div>
-    <input id="input_fps" class="monospaceInput" value="30" type="number" min="1" oninput="updatePlayerConfig()" />
+    <span>帧率</span>
+    <div class="monospace-input-container">
+      <input id="input_fps" value="30" type="number" min="1" />
+      <span style="font-family: initial;">fps</span>
+    </div>
+
   </div>
 
-  <div id="playPausePanel">
-    <button id="button_pauseContinueFlash" onclick="pauseContinueFlash()">⏯️播放/暂停</button>
-    <button id="button_resetFlash" onclick="applyPlayerConfig()">🔁应用/重置</button>
+  <div style="display: flex; column-gap:0.5rem; row-gap: 1rem;">
+    <button id="button_playPauseFlash" onclick="playPauseFlash()">⏯️播放/暂停</button>
+    <button id="button_resetFlash" onclick="applyAndResetFlash()">🔃重置/应用</button>
   </div>
 
-  <div class="iframe-wrapper" id="wrapper">
-    <iframe src="https://www.bilibili.com"></iframe>
-    <style>
-      .iframe-wrapper {
-        position: relative;
-      }
-
-      .iframe-wrapper>iframe {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 1920px;
-        height: 1080px;
-        border: none;
-        transform-origin: top left;
-      }
-    </style>
-    <script>
-      function scaleIframeToWrapper() {
-        const wrapper = document.querySelector(".iframe-wrapper");
-        const iframe = document.querySelector(".iframe-wrapper > iframe");
-
-        const scaleX = wrapper.clientWidth / 1920;
-        const scaleY = wrapper.clientHeight / 1080;
-        const scale = Math.min(scaleX, scaleY); // 保持比例铺满
-
-        iframe.style.transform = `scale(${scale})`;
-      }
-
-      new ResizeObserver(es => {
-        es.forEach(e => { scaleIframeToWrapper(); });
-      }).observe(document.querySelector(".iframe-wrapper"));
-    </script>
+  <div id="scene-wrapper">
+    <iframe></iframe>
   </div>
 
 
@@ -69,5 +73,68 @@
 
 <link rel="stylesheet" type="text/css" href="index.css" />
 <script src="index.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+<script>
+  require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' } });
+  require(['vs/editor/editor.main'], function () {
+    monaco.editor.defineTheme('transparent-theme', {
+      base: 'vs',
+      inherit: true,
+      rules: [],
+      colors: {
+        'editor.background': '#00000000',
+      }
+    });
+
+    const remToPx = (rem) => rem * parseFloat(getComputedStyle(document.documentElement).fontSize);
+
+    for (const editorElement of document.querySelectorAll(".monaco-editor-wrapper")) {
+      console.log(editorElement?.dataset?.monacoEditorOption)
+      const option = JSON.parse(editorElement?.dataset?.monacoEditorOption ?? "{}");
+      const value = customTemplate[editorElement?.dataset?.customTemplate] ?? "";
+
+      const editor = monaco.editor.create(editorElement, {
+        value: value,
+        language: option.language ?? "plaintext",
+        theme: 'transparent-theme',
+        minimap: {
+          enabled: false
+        },
+        lineNumbersMinChars: 2,
+        lineDecorationsWidth: 0,
+        tabSize: 2,
+        insertSpaces: true,
+        padding: {
+          top: remToPx(0.25),
+          bottom: remToPx(0.25),
+        },
+        // lineDecorationsWidth: remToPx(1),
+        glyphMargin: true,
+        // scrollBeyondLastLine: false,
+        smoothScrolling: true,
+        readOnly: option.readOnly ?? false,
+      });
+
+      new ResizeObserver(() => {
+        editor.layout();
+      }).observe(editorElement);
+
+    }
+
+  });
+
+  function getMonacoEditorByElement(dom) {
+    if (!dom) return null;
+
+    const editors = monaco?.editor.getEditors();
+    for (const editor of editors) {
+      if (Object.values(dom.childNodes).includes(monaco.editor.getEditors()[0].getDomNode())) {
+        return editor;
+      }
+    }
+
+    return null;
+  }
+</script>
 
 </html>

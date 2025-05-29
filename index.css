@@ -20,28 +20,41 @@ button {
   line-height: 2;
 }
 
-/* config panel */
-
-#playerEdit {
-  width: fit-content;
-  grid-template-columns: auto 6rem;
+pre {
+  margin: unset;
 }
 
-div.inputs {
+/* config panel */
+
+.inputsGrid {
+  width: 100%;
   display: grid;
-  grid-template-columns: auto auto;
-  align-items: center;
+  align-items: baseline;
   row-gap: 0.5rem;
   column-gap: 1rem;
 }
 
-.inputCharCodeContainer {
-  display: flex;
-  align-items: baseline;
-  column-gap: 0.25rem;
+.inputsGrid>*:nth-child(2n+1) {
+  line-height: 2;
 }
 
-input.monospaceInput {
+.inputsGrid>*::before(.monospace-input-container) {
+  align-self: center;
+}
+
+.monospace-input-container {
+  display: flex;
+  align-items: center;
+  column-gap: 0.125rem;
+  width: 6rem;
+}
+
+.monospace-input-container,
+.monospace-input-container>* {
+  font-family: Consolas, monospace;
+}
+
+.monospace-input-container>input {
   width: 100%;
   font-size: 1rem;
   line-height: 2;
@@ -50,25 +63,87 @@ input.monospaceInput {
   border-radius: 4px;
 }
 
-.monospaceInput,
-.charCode0x {
-  font-family: Consolas, monospace;
+#system-js-lookup {
+  justify-self: flex-start;
+  /* background-color: #fafafa; */
+  /* border: 1px solid #eee; */
+  border-radius: 4px;
+
+  display: grid;
+  grid-template-columns: auto auto;
+  /* align-items: center; */
+  row-gap: 0.5rem;
+  column-gap: 1rem;
+  /* padding: 1rem; */
+  /* line-height: 2; */
 }
 
-#playPausePanel {
+#system-js-lookup>*:nth-child(2n+1) {
+  width: max-content;
+  font-family: Consolas, monospace;
+  background-color: #f0f0f0;
+  border-radius: 4px;
+  padding: 0 0.25rem;
+}
+
+/* monaco editor */
+
+.monaco-editor-wrapper {
   display: flex;
-  column-gap: 0.5rem;
+  max-width: calc(100vw - 2rem);
+  max-height: calc(100vh - 2rem);
+  width: 36rem;
+  height: 4rem;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fafafa;
+  transition: width 0.2s, height 0.2s;
+}
+
+.monaco-editor-wrapper:focus-within {
+  width: 100%;
+  height: 36rem;
+  z-index: 2;
+}
+
+#monaco-editor-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* background: rgba(127, 127, 127, 0.1); */
+  /* backdrop-filter: saturate(120%) blur(8px); */
+  z-index: -1;
+  /* display: none; */
+  transition: background 0.2s, backdrop-filter 0.2s;
+}
+
+body:has(.monaco-editor-wrapper:focus-within) #monaco-editor-mask {
+  z-index: 1;
+  /* display: unset; */
+  background: rgba(127, 127, 127, 10%);
+  backdrop-filter: saturate(120%) blur(8px);
 }
 
 /* scene */
 
-.iframe-wrapper {
+#scene-wrapper {
   margin-top: 1rem;
-  width: 100%;
-  height: 100%;
+  margin-bottom: 1rem;
+  width: calc(100% - 1rem);
+  height: calc(100% - 1rem);
+  position: relative;
 }
 
-.iframe-wrapper>iframe {
+#scene-wrapper>iframe {
   margin: 0 auto;
   box-shadow: 0 0 0 0.1rem #ccc;
+  position: absolute;
+  top: 0;
+  left: 0;
+  border: none;
+  transform-origin: top left;
 }
