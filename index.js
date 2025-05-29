@@ -1,43 +1,171 @@
 // preset/file ←(主动导出|主动导入)→ config
 // edit ←(|触发updateConfig)→ config
-// config (主动/自动applyConfig)→ scene/player
+// config (主动/自动applyConfig)→ scene/flash
 
 // window.addEventListener("beforeunload", e => {
 //     e.preventDefault();
 // });
 
-let config = {};
+const flashConfig = { updateScene: updateScene };
+const sceneConfig = {};
+
+const customTemplate = {
+  html: `<!-- 在这里编写HTML代码 -->
+
+<div style="display: flex; flex-direction: column; justify-content: center; height:100%;">
+  <!-- 设置了元素的data-custom-func属性之后，元素的内容会被替换成对应函数的执行结果 -->
+  <div data-custom-func="char"
+    style="align-self: center; font-size: 30rem; font-family: 自定义字体1, 自定义字体2, 思源黑体, sans-serif;"></div>
+  <div data-custom-func="codePoint" style="font-size: 3rem; margin-left: 5%; font-family: 'Press Start 2P', monospace"></div>
+  <div data-custom-func="自定义1" style="font-size: 3rem; margin-left: 5%;"></div>
+</div>
+
+<style>
+  body {
+    margin: 0;
+  }
+</style>
+
+<style>
+  @font-face {
+    /* 字体名称 */
+    font-family: "自定义字体1";
+    /* 要加载的字体文件 */
+    src: url(font1.ttf);
+  }
+
+  @font-face {
+    font-family: "自定义字体2";
+    src: url(font2.woff2);
+  }
+</style>`,
+  js: `return {
+  // 在这里编写JavaScript代码
+
+  "自定义1": function (码位) {
+    if (码位 === 0x4f8b) {
+      return '这个字符是“例”'
+    } else {
+      return '这个字符不是“例”'
+    }
+  },
+  // 可以添加更多自定义函数，函数应当满足：输入一个number，输出一个string
+
+}`,
+  systemJs: `return {
+  // 内置的自定义函数
+  codePoint: codePoint, // 获取字符的码位，格式为"U+0000"
+  char: char, // 获取字符本身，如果码位大于U+10FFFF则为空字符串
+}
+
+function codePoint(pt) {
+  return \`U+\${pt?.toString(16)?.toUpperCase()?.padStart(4, "0")}\`;
+}
+
+function char(pt) {
+  return (pt <= 0x10ffff) ? \`\${String.fromCodePoint(pt)}\` : "";
+}`,
+}
+
+// const defaultFlashConfig = {
+//   startCodePoint: 0x4f8b,
+//   endCodePoint: 0x3ffff,
+//   fps: 30,
+// };
 
 window.onload = () => {
-  sceneAutoResize();
-  initializeFlash();
+  applySceneConfig();
+  applyFlashConfig();
+  flash.reset(flashConfig);
+  updateScene(flash.currentCodePoint);
+
+  new ResizeObserver(entry => {
+    scaleSceneToWrapper();
+  }).observe(document.querySelector("#scene-wrapper"));
 };
 
-// charPlayer
+// scene
 
-let charPlayer = {
-  new(config) {
+function applySceneConfig() {
+  const customJs = getMonacoEditorByElement(document.querySelector('#monaco-editor-js'))?.getValue() ?? customTemplate.js;
+  const customFuncs = new Function(customJs)();
+  const systemJs = customTemplate.systemJs;
+  const systemFuncs = new Function(systemJs)();
+  sceneConfig.funcs = Object.assign({}, systemFuncs, isPlainObject(customFuncs) ? customFuncs : {});
+
+  const iframe = document.querySelector('#scene-wrapper > iframe');
+  sceneConfig.width = document.querySelector("#input_width").value;
+  sceneConfig.height = document.querySelector("#input_height").value;
+  iframe.style.width = sceneConfig.width + "px";
+  iframe.style.height = sceneConfig.height + "px";
+  scaleSceneToWrapper();
+
+  const html = getMonacoEditorByElement(document.querySelector('#monaco-editor-html'))?.getValue() ?? customTemplate.html;
+  const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+  iframeDoc.open();
+  iframeDoc.write(html);
+  iframeDoc.close();
+}
+
+function applyAndUpdateScene() {
+  applySceneConfig();
+  updateScene(flash.currentCodePoint);
+}
+
+function isPlainObject(obj) {
+  return obj !== null && typeof obj === 'object' && !Array.isArray(obj);
+}
+
+function scaleSceneToWrapper() {
+  const wrapper = document.querySelector("#scene-wrapper");
+  const iframe = document.querySelector("#scene-wrapper > iframe");
+
+  const scaleX = wrapper.clientWidth / sceneConfig.width;
+  const scaleY = wrapper.clientHeight / sceneConfig.height;
+  const scale = Math.min(scaleX, scaleY); // 保持比例铺满
+
+  iframe.style.transform = `scale(${scale})`;
+}
+
+function updateScene(codePoint) {
+  const iframe = document.querySelector("#scene-wrapper > iframe");
+  const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+  const elements = iframeDoc.querySelectorAll('[data-custom-func]');
+  elements.forEach(e => {
+    const funcName = e.dataset.customFunc;
+    const func = sceneConfig.funcs[funcName];
+
+    if (typeof func === 'function') {
+      try {
+        e.innerHTML = func(codePoint);
+      } catch (err) {
+        console.error(`执行函数 ${funcName} 时出错：`, err);
+      }
+    } else {
+      console.error(`未找到函数 ${funcName}`);
+    }
+  });
+}
+
+// flash
+
+let flash = {
+  reset({ startCodePoint, endCodePoint, fps, updateScene }) {
     this.stop?.();
 
-    charPlayer = {
-      startCode: config.startCode,
-      endCode: config.endCode,
-      fps: config.fps,
-      showChar: config.showChar,
-      interval: undefined,
-
-      new: this.new,
-
-      initialize() {
-        this.currentCode = this.startCode;
-        this.showChar(this.currentCode);
-      },
+    flash = {
+      startCodePoint: startCodePoint,
+      endCodePoint: endCodePoint,
+      fps: fps,
+      updateScene: updateScene,
+      reset: this.reset,
+      currentCodePoint: startCodePoint,
 
       play() {
         this.interval = setInterval(() => {
-          this.showChar(this.currentCode);
-          if (this.currentCode >= this.endCode) this.stop();
-          else this.currentCode += 1;
+          this.updateScene(this.currentCodePoint);
+          if (this.currentCodePoint >= this.endCodePoint) this.stop();
+          else this.currentCodePoint += 1;
         }, 1000 / this.fps);
       },
 
@@ -55,213 +183,34 @@ let charPlayer = {
   },
 };
 
-// config
-
-const presetConfig = {
-  sceneConfig: [
-    {
-      text: "[bgBlock]"
-    },
-    {
-      text: "[charCode]",
-      y: 20,
-      fonts: ["Consolas", "monospace"]
-    },
-    {
-      text: "[char]",
-      fonts: ["\"思源宋体\"", "\"Noto Serif CJK SC\"", "\"天珩全字库TH-Tshyn-P0\"", "\"天珩全字库TH-Tshyn-P1\"", "\"天珩全字库TH-Tshyn-P2\"", "\"天珩全字库TH-Tshyn-P16\"", "sans-serif"],
-      textSize: 30
-    },
-  ],
-  playerConfig: {
-    startCode: 0x4f8b,
-    endCode: 0x3ffff,
-    fps: 30,
-  },
-};
-
-const defaultComponentConfig = {
-  text: "",
-  x: 50,
-  y: 50,
-  xAlign: "middle",
-  yAlign: "middle",
-  fonts: [],
-  textSize: "",
-  textColor: "",
-  visible: true,
-  custom: ""
-};
-
-const defaultPlayerConfig = {
-  startCode: 0x4f8b,
-  endCode: 0x3ffff,
-  fps: 30,
-};
-
-function newSceneConfig(config) {
-  if (!config || !(config instanceof Array)) return;
-  let newConfig = [];
-  config.forEach(component => {
-    if (!component || !(component instanceof Object)) return;
-    let newComponent = Object.create(defaultComponentConfig);
-    Object.assign(newComponent, component);
-    newConfig.push(newComponent);
-  });
-  return newConfig;
+function playPauseFlash() {
+  // if (!flash) initializeFlash();
+  if (!flash.interval) flash.play();
+  else flash.pause();
+  // sceneNotUpToDate();
 }
 
-function newPlayerConfig(config) {
-  if (!config || !(config instanceof Object)) return;
-  let newConfig = Object.create(defaultPlayerConfig);
-  Object.assign(newConfig, config);
-  return newConfig;
-}
-
-// scene
-
-function sceneAutoResize() {
-  new ResizeObserver(es => {
-    es.forEach(e => {
-      document.documentElement.style.setProperty("--sceneMaxWidth", e.contentRect.width + "px");
-      document.documentElement.style.setProperty("--sceneMaxHeight", e.contentRect.height + "px");
-    });
-  }).observe(document.querySelector("#sceneMaxSize"));
-}
-
-function initializeFlash() {
-  config.sceneConfig = newSceneConfig(presetConfig.sceneConfig);
-  config.playerConfig = newPlayerConfig(presetConfig.playerConfig)
-  updateAndApplySceneConfig();
-  updatePlayerConfig();
-  applyPlayerConfig();
-}
-
-// resetButton
-
-function sceneUpToDate() {
-  // document.body.classList.add("sceneUpToDate");
-  document.querySelector("#button_resetFlash").disabled = true;
-}
-
-function sceneNotUpToDate() {
-  // document.body.classList.remove("sceneUpToDate");
-  document.querySelector("#button_resetFlash").disabled = false;
-}
-
-// useredit → sceneconfig → scene
-function updateAndApplySceneConfig() {
-  updateSceneConfig();
-  applySceneConfig();
-}
-
-function updateSceneConfig() {
-
-};
-
-const defaultComponentHtml = '<div class="component"><span class="rawText"></span><span class="text"></span></div>';
-const componentXAlignMap = { "left": "0", "middle": "50%", "right": "100%" };
-const componentYAlignMap = { "top": "0", "middle": "50%", "bottom": "100%" };
-
-function applySceneConfig() {
-  document.querySelector("#scene").innerHTML = "";
-  config.sceneConfig.forEach(componentConfig => {
-    let component = new DOMParser().parseFromString(defaultComponentHtml, "text/html").body.firstChild;
-
-    component.querySelector(".rawText").innerHTML = (componentConfig.text || defaultComponentConfig.text);
-    component.style.setProperty("--component_x", (componentConfig.x ?? defaultComponentConfig.x) / 100);
-    component.style.setProperty("--component_y", (componentConfig.y ?? defaultComponentConfig.y) / 100);
-    component.style.setProperty("--component_xAlign", componentXAlignMap[componentConfig.xAlign || defaultComponentConfig.xAlign]);
-    component.style.setProperty("--component_yAlign", componentYAlignMap[componentConfig.yAlign || defaultComponentConfig.yAlign]);
-    component.style.setProperty("font-family", fontFamilyArrayToFontFamilyString(componentConfig.fonts || defaultComponentConfig.fonts));
-    component.style.setProperty("font-size", (componentConfig.textSize || defaultComponentConfig.textSize) + "em");
-    component.style.setProperty("color", (componentConfig.textColor || defaultComponentConfig.textColor));
-    if (!(componentConfig.visible || defaultComponentConfig.visible)) component.style.setProperty("display", "none");
-
-    document.querySelector("#scene").appendChild(component);
-  });
-};
-
-const fontFamilyGenericName = ["serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui", "ui-serif", "ui-sans-serif", "ui-monospace", "ui-rounded", "math", "emoji", "fangsong"];
-
-function fontFamilyArrayToFontFamilyString(fonts) {
-  let fontsString = "";
-  fonts.forEach(rawFont => {
-    let font = rawFont;
-    if (!fontFamilyGenericName.includes(rawFont)) {
-      font = font.replaceAll(/^["'](.*)["']$/g, "$1"); // 去除头尾引号
-      font = font.replaceAll(/["']/g, "\\$1"); // 转义中间引号
-    }
-    if (fontsString) fontsString += ", ";
-    fontsString += font;
-  });
-  return fontsString;
-}
-
-// useredit → playerconfig
-
-function updatePlayerConfig() {
-  let startCode = charCodeStringToCharCode(document.querySelector("#input_startCode").value);
-  let endCode = charCodeStringToCharCode(document.querySelector("#input_endCode").value);
+function applyFlashConfig() {
+  let startCodePoint = codePointStrTocodePoint(document.querySelector("#input_startCodePoint").value);
+  let endCodePoint = codePointStrTocodePoint(document.querySelector("#input_endCodePoint").value);
   let fps = parseInt(document.querySelector("#input_fps").value);
   if (!fps > 0) fps = 1;
 
-  config.playerConfig.startCode = startCode;
-  config.playerConfig.endCode = endCode;
-  config.playerConfig.fps = fps;
+  flashConfig.startCodePoint = startCodePoint;
+  flashConfig.endCodePoint = endCodePoint;
+  flashConfig.fps = fps;
 
-  sceneNotUpToDate();
+  // sceneNotUpToDate();
 }
 
-function charCodeStringToCharCode(charCodeString) {
-  let charCode = 0;
-  if (new RegExp("^[0-9a-fA-F]{1,}$").test(charCodeString)) charCode = parseInt(`0x${charCodeString}`);
-  return charCode;
+function applyAndResetFlash() {
+  applyFlashConfig();
+  flash.reset(flashConfig);
+  updateScene(flash.currentCodePoint);
 }
 
-// playerconfig → player
-
-function applyPlayerConfig() {
-  charPlayer.new({
-    startCode: config.playerConfig.startCode,
-    endCode: config.playerConfig.endCode,
-    fps: config.playerConfig.fps,
-    showChar: showChar
-  });
-  charPlayer.initialize();
-  sceneUpToDate();
-}
-
-// scene
-
-const altCodes = {
-  "[charCode]": codePoint => `U+${codePoint.toString(16).toUpperCase().padStart(4, "0")}`,
-  "[char]": codePoint => (codePoint <= 0x10ffff) ? `${String.fromCodePoint(codePoint)}` : "",
-  "[bgBlock]": codePoint => `<div style="height: var(--sceneHeight); width: var(--sceneWidth); background-color: ${getBgBlockColor(codePoint)}; user-select: none;"></div>`
-};
-
-const bgBlockColors = ["#dde", "#ded", "#def", "#dfe", "#edd", "#edf", "#eef", "#efe", "#fdd", "#fdf", "#fee", "#ffd", "#ddf", "#dee", "#dfd", "#dff", "#ede", "#eed", "#efd", "#eff", "#fde", "#fed", "#fef", "#ffe"];
-
-function getBgBlockColor(codePoint) {
-  let r = parseInt(codePoint / 8) % 24;
-  return bgBlockColors[r];
-}
-
-function showChar(codePoint) {
-  document.querySelectorAll(".component").forEach(e => {
-    let rawText = e.querySelector(".rawText").innerHTML;
-    for (let altCode in altCodes) {
-      rawText = rawText.replaceAll(altCode, altCodes[altCode](codePoint))
-    }
-    e.querySelector(".text").innerHTML = rawText;
-  });
-}
-
-// player
-
-function pauseContinueFlash() {
-  if (!charPlayer) initializeFlash();
-  if (!charPlayer.interval) charPlayer.play();
-  else charPlayer.pause();
-  sceneNotUpToDate();
+function codePointStrTocodePoint(ptStr) {
+  let pt = 0;
+  if (new RegExp("^[0-9a-fA-F]{1,}$").test(ptStr)) pt = parseInt(`0x${ptStr}`);
+  return pt;
 }
